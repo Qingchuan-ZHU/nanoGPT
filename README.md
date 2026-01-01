@@ -1,6 +1,10 @@
 # 我的nanoGPT学习笔记
 
-## 📝 nanoGPT 学习笔记 - Day 1
+## 📝 nanoGPT 学习笔记
+
+本项目是我的 nanoGPT 实战记录。
+详细的学习心得、实验图表及源码注释请移步：
+[👉 Study Notes 分支](../../tree/study-notes)
 
 ### 1. 测试环境 (Test Environment)
 
