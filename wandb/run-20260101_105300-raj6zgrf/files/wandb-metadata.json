@@ -1,0 +1,54 @@
+{
+  "os":  "Windows-11-10.0.26200-SP0",
+  "python":  "CPython 3.12.7",
+  "startedAt":  "2026-01-01T02:53:00.561182Z",
+  "args":  [
+    "--dataset=shakespeare_char",
+    "--device=cuda",
+    "--compile=False",
+    "--wandb_log=True",
+    "--eval_iters=100",
+    "--log_interval=10",
+    "--block_size=256",
+    "--batch_size=64",
+    "--n_layer=4",
+    "--n_head=4",
+    "--n_embd=256",
+    "--max_iters=2000"
+  ],
+  "program":  "D:\\_code\\nanoGPT\\train.py",
+  "codePath":  "train.py",
+  "codePathLocal":  "train.py",
+  "git":  {
+    "remote":  "https://github.com/Qingchuan-ZHU/nanoGPT.git",
+    "commit":  "3adf61e154c3fe3fca428ad6bc3818b27a3b8291"
+  },
+  "email":  "zqc199304@gmail.com",
+  "root":  "D:\\_code\\nanoGPT",
+  "host":  "Qingchuan-PC",
+  "executable":  "C:\\Users\\ZHU Qingchuan\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+  "cpu_count":  12,
+  "cpu_count_logical":  20,
+  "gpu":  "NVIDIA GeForce RTX 4070 Ti SUPER",
+  "gpu_count":  1,
+  "disk":  {
+    "/":  {
+      "total":  "1048574947328",
+      "used":  "606990360576"
+    }
+  },
+  "memory":  {
+    "total":  "68448337920"
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "NVIDIA GeForce RTX 4070 Ti SUPER",
+      "memoryTotal":  "17171480576",
+      "cudaCores":  8448,
+      "architecture":  "Ada",
+      "uuid":  "GPU-32d224aa-6943-946e-af5a-4a472800f617"
+    }
+  ],
+  "cudaVersion":  "13.1",
+  "writerId":  "hnt03kqb0394r7xw10t9reo9xstpktlu"
+}
