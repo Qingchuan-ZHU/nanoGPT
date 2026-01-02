@@ -11,6 +11,7 @@
 为了保持主分支代码的纯净，我将详细的实验记录、源码拆解及心得感悟存放在 **`study-notes`** 分支中。
 
 * **[👉 点击进入：study-notes分支](../../tree/study-notes)**
-* **[👉 点击进入：实验复盘](../../tree/study-notes/1_test_run_records.md)**
-    * *包含：W&B 实时监控图表、4070 Ti Super 性能分析、模型生成结果深度意译。*
-* **[👉 点击查看：带详细注释的预处理脚本](../../blob/study-notes/prepare_with_comments.py)**
+* **[👉 点击进入：实验日志](../../tree/study-notes/1_test_run_records.md)**
+    * *在 Windows 环境下使用 RTX 4070 Ti Super 训练莎士比亚字符级模型的实验日志，记录了环境配置、训练过程监控以及对生成文本风格与局限性的深度分析。*
+* **[👉 点击查看：数据预处理](../../blob/study-notes/notes/prepare_with_comments.py)**
+    * *详细注释了如何将莎士比亚文本转化为由 65 个唯一字符组成的词表，并编码为二进制格式以供模型进行高效的预测训练。*
