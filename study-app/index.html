@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>nanoGPT 初中互动学习实验室</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="shape shape-a"></div>
+  <div class="shape shape-b"></div>
+  <header class="hero">
+    <p class="eyebrow">nanoGPT 学习实验室</p>
+    <h1>用初中知识看懂 <code>model.py</code> 和 <code>train.py</code></h1>
+    <p class="hero-subtitle">把抽象的“注意力、残差、训练循环”变成可以拖动和点击的实验。</p>
+    <nav class="quick-nav">
+      <a href="#glossary">术语全解</a>
+      <a href="#arch">架构图谱</a>
+      <a href="#exp1">实验 1 编码</a>
+      <a href="#exp2">实验 2 注意力</a>
+      <a href="#exp3">实验 3 Block</a>
+      <a href="#exp4">实验 4 训练与采样</a>
+      <a href="#code-map">源码映射</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section id="glossary" class="panel">
+      <h2>术语全解: 每个名字都说人话</h2>
+      <p class="knowledge">知识点: 名词拆解、变量含义、代码定位</p>
+      <div class="card glossary-toolbar">
+        <label for="termSearch">搜索术语</label>
+        <input id="termSearch" placeholder="例如: token, softmax, dropout, warmup">
+        <div class="control-row">
+          <button id="expandTermsBtn">全部展开</button>
+          <button id="collapseTermsBtn" class="secondary">全部收起</button>
+          <span class="value-chip" id="termCount">0</span>
+        </div>
+      </div>
+      <div id="termList" class="term-list"></div>
+    </section>
+
+    <section id="arch" class="panel">
+      <h2>架构图谱: 一眼看清 nanoGPT 全流程</h2>
+      <p class="knowledge">知识点: 架构、张量形状、参数规模、训练闭环</p>
+      <div class="card">
+        <h3>可调配置 (影响下方所有图表)</h3>
+        <div class="arch-controls">
+          <div class="arch-control">
+            <label for="archLayer">n_layer</label>
+            <input id="archLayer" type="range" min="2" max="24" step="1" value="12">
+            <p class="meta"><span>层数</span><span id="archLayerValue"></span></p>
+          </div>
+          <div class="arch-control">
+            <label for="archHead">n_head</label>
+            <input id="archHead" type="range" min="2" max="24" step="1" value="12">
+            <p class="meta"><span>头数</span><span id="archHeadValue"></span></p>
+          </div>
+          <div class="arch-control">
+            <label for="archEmbd">n_embd</label>
+            <input id="archEmbd" type="range" min="128" max="1536" step="64" value="768">
+            <p class="meta"><span>隐藏维度</span><span id="archEmbdValue"></span></p>
+          </div>
+          <div class="arch-control">
+            <label for="archBlock">block_size</label>
+            <input id="archBlock" type="range" min="64" max="2048" step="64" value="1024">
+            <p class="meta"><span>上下文长度</span><span id="archBlockValue"></span></p>
+          </div>
+          <div class="arch-control">
+            <label for="archVocab">vocab_size</label>
+            <input id="archVocab" type="range" min="5000" max="60000" step="500" value="50304">
+            <p class="meta"><span>词表大小</span><span id="archVocabValue"></span></p>
+          </div>
+        </div>
+        <div class="control-row">
+          <button id="archRandomBtn" class="secondary">随机一组配置</button>
+        </div>
+      </div>
+
+      <div class="layout-two">
+        <div class="card">
+          <h3>1) GPT 组件架构图</h3>
+          <canvas id="gptArchitectureCanvas" class="chart-canvas"></canvas>
+        </div>
+        <div class="card">
+          <h3>2) 数据管线图 (dataset -> get_batch -> model)</h3>
+          <canvas id="dataPipelineCanvas" class="chart-canvas"></canvas>
+        </div>
+      </div>
+
+      <div class="layout-two">
+        <div class="card">
+          <h3>3) 张量形状流转图</h3>
+          <canvas id="tensorShapeCanvas" class="chart-canvas"></canvas>
+        </div>
+        <div class="card">
+          <h3>4) 注意力头并行结构</h3>
+          <canvas id="headGridCanvas" class="chart-canvas chart-sm"></canvas>
+        </div>
+      </div>
+
+      <div class="layout-two">
+        <div class="card">
+          <h3>5) 参数分布图 (近似)</h3>
+          <canvas id="paramBreakdownCanvas" class="chart-canvas chart-sm"></canvas>
+        </div>
+        <div class="card">
+          <h3>6) 计算量随上下文长度变化 (近似 FLOPs)</h3>
+          <canvas id="flopsCanvas" class="chart-canvas chart-sm"></canvas>
+        </div>
+      </div>
+
+      <div class="layout-two">
+        <div class="card">
+          <h3>7) 训练循环时序图</h3>
+          <canvas id="trainTimelineCanvas" class="chart-canvas chart-sm"></canvas>
+        </div>
+        <div class="card">
+          <h3>8) 显存压力估计图 (activation 近似)</h3>
+          <canvas id="memoryCanvas" class="chart-canvas chart-sm"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section id="exp1" class="panel">
+      <h2>实验 1: 文字是怎么变成数字的</h2>
+      <p class="knowledge">知识点: 集合去重、顺序、错位配对</p>
+      <div class="layout-two">
+        <div class="card">
+          <label for="charInput">输入文本</label>
+          <textarea id="charInput" rows="4">to be or not to be</textarea>
+          <div class="control-row">
+            <button id="buildCharBtn">生成词表和样本</button>
+            <button id="randomTextBtn" class="secondary">换一个例子</button>
+          </div>
+          <p id="charHint" class="hint"></p>
+        </div>
+        <div class="card">
+          <h3>字符词表 (stoi)</h3>
+          <div id="vocabView" class="chip-box"></div>
+          <h3>编码序列</h3>
+          <div id="encodedView" class="token-track"></div>
+        </div>
+      </div>
+      <div class="layout-two">
+        <div class="card">
+          <h3>训练配对: x -> y (右移一位)</h3>
+          <div id="pairView" class="pair-list"></div>
+        </div>
+        <div class="card">
+          <h3>字符频率柱状图</h3>
+          <canvas id="charFreqCanvas" class="chart-canvas chart-sm"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section id="exp2" class="panel">
+      <h2>实验 2: 因果注意力 (Causal Attention)</h2>
+      <p class="knowledge">知识点: 权重、加权平均、概率归一化</p>
+      <div class="card">
+        <label for="attnInput">输入 token 序列 (空格分隔)</label>
+        <input id="attnInput" value="I am learning nanoGPT today">
+        <div class="control-row">
+          <label for="focusIndex">当前预测位置</label>
+          <input id="focusIndex" type="range" min="0" max="4" value="4">
+          <span id="focusLabel" class="value-chip">4</span>
+          <button id="attnApplyBtn" class="secondary">应用输入</button>
+        </div>
+        <div id="tokenStrip" class="token-strip"></div>
+      </div>
+      <div class="layout-two">
+        <div class="card">
+          <h3>打分 (未来词会被屏蔽)</h3>
+          <div id="scoreControls"></div>
+        </div>
+        <div class="card">
+          <h3>softmax 后的注意力概率</h3>
+          <div id="attnBars"></div>
+          <p id="attnExplain" class="hint"></p>
+        </div>
+      </div>
+      <div class="card">
+        <h3>注意力热力图 (Attention Matrix)</h3>
+        <canvas id="attnHeatmapCanvas" class="chart-canvas"></canvas>
+      </div>
+    </section>
+
+    <section id="exp3" class="panel">
+      <h2>实验 3: 一个 Transformer Block 发生了什么</h2>
+      <p class="knowledge">知识点: 平均数、标准差、分步函数、向量加法</p>
+      <div class="card">
+        <div class="control-row">
+          <button id="nextStepBtn">下一步</button>
+          <button id="autoPlayBtn" class="secondary">自动播放</button>
+          <button id="resetBlockBtn" class="secondary">重置向量</button>
+        </div>
+      </div>
+      <div id="pipeline" class="pipeline"></div>
+      <p id="blockExplain" class="hint"></p>
+      <div class="layout-two">
+        <div class="card">
+          <h3>各阶段向量能量 (L2 范数)</h3>
+          <canvas id="blockEnergyCanvas" class="chart-canvas chart-sm"></canvas>
+        </div>
+        <div class="card">
+          <h3>当前阶段向量分量</h3>
+          <canvas id="blockVectorCanvas" class="chart-canvas chart-sm"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section id="exp4" class="panel">
+      <h2>实验 4: 训练曲线和采样参数</h2>
+      <p class="knowledge">知识点: 函数图像、迭代、随机抽样</p>
+      <div class="layout-two">
+        <div class="card">
+          <h3>训练模拟器</h3>
+          <label for="lrScale">学习率</label>
+          <input id="lrScale" type="range" min="0" max="100" value="55">
+          <p class="meta"><span>当前学习率</span><span id="lrValue"></span></p>
+
+          <label for="batchSize">batch size</label>
+          <input id="batchSize" type="range" min="4" max="128" step="4" value="32">
+          <p class="meta"><span>当前 batch</span><span id="batchValue"></span></p>
+
+          <label for="gradAccum">gradient accumulation</label>
+          <input id="gradAccum" type="range" min="1" max="16" value="4">
+          <p class="meta"><span>累计步数</span><span id="accumValue"></span></p>
+
+          <label for="dropoutRate">dropout</label>
+          <input id="dropoutRate" type="range" min="0" max="50" value="10">
+          <p class="meta"><span>dropout</span><span id="dropoutValue"></span></p>
+
+          <div class="control-row">
+            <button id="runTrainSimBtn">运行 220 步</button>
+            <button id="resetTrainSimBtn" class="secondary">重置图像</button>
+          </div>
+          <p id="trainSummary" class="hint"></p>
+        </div>
+        <div class="card">
+          <h3>loss 曲线 (train/val)</h3>
+          <canvas id="lossCanvas" class="chart-canvas"></canvas>
+          <h3>学习率计划 (warmup + cosine)</h3>
+          <canvas id="lrCanvas" class="chart-canvas chart-sm"></canvas>
+        </div>
+      </div>
+
+      <div class="layout-two">
+        <div class="card">
+          <h3>采样控制台 (<code>temperature</code> / <code>top_k</code>)</h3>
+          <label for="seedInput">起始词</label>
+          <input id="seedInput" value="nano">
+
+          <label for="temperatureRange">temperature</label>
+          <input id="temperatureRange" type="range" min="2" max="20" value="8">
+          <p class="meta"><span>当前温度</span><span id="temperatureValue"></span></p>
+
+          <label for="topKRange">top_k</label>
+          <input id="topKRange" type="range" min="1" max="8" value="4">
+          <p class="meta"><span>当前 top_k</span><span id="topKValue"></span></p>
+
+          <div class="control-row">
+            <button id="genOneBtn">生成 1 步</button>
+            <button id="genTenBtn" class="secondary">连续 10 步</button>
+            <button id="genResetBtn" class="secondary">清空</button>
+          </div>
+          <p id="genOutput" class="output"></p>
+        </div>
+        <div class="card">
+          <h3>本步候选概率图</h3>
+          <canvas id="candidateCanvas" class="chart-canvas chart-sm"></canvas>
+          <h3>候选明细</h3>
+          <div id="candidateView" class="candidate-view"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="code-map" class="panel">
+      <h2>源码映射 (你可以对照回看)</h2>
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>互动模块</th>
+              <th>源码位置</th>
+              <th>核心思想</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>文本编码与训练配对</td>
+              <td><code>train.py:116</code></td>
+              <td><code>x = data[i:i+block_size]</code> 与 <code>y = data[i+1:i+1+block_size]</code></td>
+            </tr>
+            <tr>
+              <td>因果 mask 与 softmax</td>
+              <td><code>model.py:68</code>, <code>model.py:69</code></td>
+              <td>未来位置设为 <code>-inf</code>，再做 softmax 得概率</td>
+            </tr>
+            <tr>
+              <td>Block 残差结构</td>
+              <td><code>model.py:104</code>, <code>model.py:105</code></td>
+              <td><code>x = x + ...</code> 两次残差叠加</td>
+            </tr>
+            <tr>
+              <td>学习率与训练循环</td>
+              <td><code>train.py:231</code>, <code>train.py:255</code></td>
+              <td>按迭代步动态调学习率并持续优化</td>
+            </tr>
+            <tr>
+              <td>采样中的 temperature/top_k</td>
+              <td><code>model.py:306</code>, <code>model.py:320</code>, <code>model.py:326</code></td>
+              <td>调温度、截断候选，再按概率随机采样</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>学习建议: 先做实验 1 和 2，再回看 <code>model.py</code>，最后再跑真实训练脚本。</p>
+  </footer>
+
+  <div id="termTooltip" class="term-tooltip" hidden></div>
+  <script src="./app.js"></script>
+</body>
+</html>
