@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>实验 2 注意力 | nanoGPT 学习实验室</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="shape shape-a"></div>
+  <div class="shape shape-b"></div>
+
+  <header class="hero">
+    <p class="eyebrow">nanoGPT 学习实验室</p>
+    <h1>实验 2: 因果注意力 (Causal Attention)</h1>
+    <p class="hero-subtitle">动手调分数，看 softmax 概率如何变化，并理解“不能看未来”的因果约束。</p>
+    <nav class="quick-nav">
+      <a href="./index.html">首页</a>
+      <a href="./glossary.html">术语与源码</a>
+      <a href="./architecture.html">架构图谱</a>
+      <a href="./exp1.html">实验 1 编码</a>
+      <a href="./exp2.html" class="active">实验 2 注意力</a>
+      <a href="./exp3.html">实验 3 Block</a>
+      <a href="./exp4.html">实验 4 训练与采样</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section id="exp2" class="panel">
+      <h2>实验 2: 因果注意力 (Causal Attention)</h2>
+      <p class="knowledge">知识点: 权重、加权平均、概率归一化</p>
+      <div class="card">
+        <label for="attnInput">输入 token 序列 (空格分隔)</label>
+        <input id="attnInput" value="I am learning nanoGPT today">
+        <div class="control-row">
+          <label for="focusIndex">当前预测位置</label>
+          <input id="focusIndex" type="range" min="0" max="4" value="4">
+          <span id="focusLabel" class="value-chip">4</span>
+          <button id="attnApplyBtn" class="secondary">应用输入</button>
+        </div>
+        <div id="tokenStrip" class="token-strip"></div>
+      </div>
+      <div class="layout-two">
+        <div class="card">
+          <h3>打分 (未来词会被屏蔽)</h3>
+          <div id="scoreControls"></div>
+        </div>
+        <div class="card">
+          <h3>softmax 后的注意力概率</h3>
+          <div id="attnBars"></div>
+          <p id="attnExplain" class="hint"></p>
+        </div>
+      </div>
+      <div class="card">
+        <h3>注意力热力图 (Attention Matrix)</h3>
+        <canvas id="attnHeatmapCanvas" class="chart-canvas"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>本页搞清“屏蔽 + softmax”后，再看 Block 页面会更容易理解内部流程。</p>
+  </footer>
+
+  <div id="termTooltip" class="term-tooltip" hidden></div>
+  <script src="./app.js"></script>
+</body>
+</html>

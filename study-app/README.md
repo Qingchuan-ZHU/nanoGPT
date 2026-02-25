@@ -1,7 +1,7 @@
 # nanoGPT 初中互动学习实验室
 
 这个目录是一个纯前端学习应用，目标是用初中数学知识理解 `nanoGPT` 的核心实现。
-当前版本以图表为主，包含多张可交互可视化。
+当前版本已从单页拆分为多页，每页只保留一个主题模块。
 
 ## 快速打开
 
@@ -14,12 +14,21 @@ python -m http.server 8000
 
 然后访问 `http://localhost:8000/study-app/`
 
+## 页面结构
+
+- `index.html`: 首页和学习路径导航
+- `glossary.html`: 术语全解 + 源码映射
+- `architecture.html`: 架构图谱总览
+- `exp1.html`: 文本编码与右移配对
+- `exp2.html`: 因果注意力与 softmax
+- `exp3.html`: Transformer Block 流程
+- `exp4.html`: 训练模拟与采样控制
+
 ## 学习路径
 
-1. 实验 1: 文字编码和右移配对，理解 `x -> y` 训练样本
-2. 实验 2: 因果注意力和 softmax，理解为什么“不能看未来”
-3. 实验 3: 一个 Block 的残差流程
-4. 实验 4: 学习率/批量对 loss 的影响，和 `temperature/top_k` 采样
+1. `glossary.html`: 先把术语和代码位置建立映射
+2. `architecture.html`: 看整机流程和形状/参数/算力关系
+3. `exp1.html` 到 `exp4.html`: 逐个完成四个交互实验
 
 ## 图表清单
 

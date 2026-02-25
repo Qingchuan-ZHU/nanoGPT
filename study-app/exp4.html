@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>实验 4 训练与采样 | nanoGPT 学习实验室</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="shape shape-a"></div>
+  <div class="shape shape-b"></div>
+
+  <header class="hero">
+    <p class="eyebrow">nanoGPT 学习实验室</p>
+    <h1>实验 4: 训练曲线和采样参数</h1>
+    <p class="hero-subtitle">在同一页体验训练超参数和生成超参数，观察 loss 与输出风格变化。</p>
+    <nav class="quick-nav">
+      <a href="./index.html">首页</a>
+      <a href="./glossary.html">术语与源码</a>
+      <a href="./architecture.html">架构图谱</a>
+      <a href="./exp1.html">实验 1 编码</a>
+      <a href="./exp2.html">实验 2 注意力</a>
+      <a href="./exp3.html">实验 3 Block</a>
+      <a href="./exp4.html" class="active">实验 4 训练与采样</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section id="exp4" class="panel">
+      <h2>实验 4: 训练曲线和采样参数</h2>
+      <p class="knowledge">知识点: 函数图像、迭代、随机抽样</p>
+      <div class="layout-two">
+        <div class="card">
+          <h3>训练模拟器</h3>
+          <label for="lrScale">学习率</label>
+          <input id="lrScale" type="range" min="0" max="100" value="55">
+          <p class="meta"><span>当前学习率</span><span id="lrValue"></span></p>
+
+          <label for="batchSize">batch size</label>
+          <input id="batchSize" type="range" min="4" max="128" step="4" value="32">
+          <p class="meta"><span>当前 batch</span><span id="batchValue"></span></p>
+
+          <label for="gradAccum">gradient accumulation</label>
+          <input id="gradAccum" type="range" min="1" max="16" value="4">
+          <p class="meta"><span>累计步数</span><span id="accumValue"></span></p>
+
+          <label for="dropoutRate">dropout</label>
+          <input id="dropoutRate" type="range" min="0" max="50" value="10">
+          <p class="meta"><span>dropout</span><span id="dropoutValue"></span></p>
+
+          <div class="control-row">
+            <button id="runTrainSimBtn">运行 220 步</button>
+            <button id="resetTrainSimBtn" class="secondary">重置图像</button>
+          </div>
+          <p id="trainSummary" class="hint"></p>
+        </div>
+        <div class="card">
+          <h3>loss 曲线 (train/val)</h3>
+          <canvas id="lossCanvas" class="chart-canvas"></canvas>
+          <h3>学习率计划 (warmup + cosine)</h3>
+          <canvas id="lrCanvas" class="chart-canvas chart-sm"></canvas>
+        </div>
+      </div>
+
+      <div class="layout-two">
+        <div class="card">
+          <h3>采样控制台 (<code>temperature</code> / <code>top_k</code>)</h3>
+          <label for="seedInput">起始词</label>
+          <input id="seedInput" value="nano">
+
+          <label for="temperatureRange">temperature</label>
+          <input id="temperatureRange" type="range" min="2" max="20" value="8">
+          <p class="meta"><span>当前温度</span><span id="temperatureValue"></span></p>
+
+          <label for="topKRange">top_k</label>
+          <input id="topKRange" type="range" min="1" max="8" value="4">
+          <p class="meta"><span>当前 top_k</span><span id="topKValue"></span></p>
+
+          <div class="control-row">
+            <button id="genOneBtn">生成 1 步</button>
+            <button id="genTenBtn" class="secondary">连续 10 步</button>
+            <button id="genResetBtn" class="secondary">清空</button>
+          </div>
+          <p id="genOutput" class="output"></p>
+        </div>
+        <div class="card">
+          <h3>本步候选概率图</h3>
+          <canvas id="candidateCanvas" class="chart-canvas chart-sm"></canvas>
+          <h3>候选明细</h3>
+          <div id="candidateView" class="candidate-view"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>这一页把“训练”和“生成”分开调参，便于比较它们对结果的不同影响。</p>
+  </footer>
+
+  <div id="termTooltip" class="term-tooltip" hidden></div>
+  <script src="./app.js"></script>
+</body>
+</html>

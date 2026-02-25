@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>架构图谱 | nanoGPT 学习实验室</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="shape shape-a"></div>
+  <div class="shape shape-b"></div>
+
+  <header class="hero">
+    <p class="eyebrow">nanoGPT 学习实验室</p>
+    <h1>架构图谱总览</h1>
+    <p class="hero-subtitle">把模型结构、数据流、形状变化、参数和计算量放在同一页看清楚。</p>
+    <nav class="quick-nav">
+      <a href="./index.html">首页</a>
+      <a href="./glossary.html">术语与源码</a>
+      <a href="./architecture.html" class="active">架构图谱</a>
+      <a href="./exp1.html">实验 1 编码</a>
+      <a href="./exp2.html">实验 2 注意力</a>
+      <a href="./exp3.html">实验 3 Block</a>
+      <a href="./exp4.html">实验 4 训练与采样</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section id="arch" class="panel">
+      <h2>架构图谱: 一眼看清 nanoGPT 全流程</h2>
+      <p class="knowledge">知识点: 架构、张量形状、参数规模、训练闭环</p>
+      <div class="card">
+        <h3>可调配置 (影响下方所有图表)</h3>
+        <div class="arch-controls">
+          <div class="arch-control">
+            <label for="archLayer">n_layer</label>
+            <input id="archLayer" type="range" min="2" max="24" step="1" value="12">
+            <p class="meta"><span>层数</span><span id="archLayerValue"></span></p>
+          </div>
+          <div class="arch-control">
+            <label for="archHead">n_head</label>
+            <input id="archHead" type="range" min="2" max="24" step="1" value="12">
+            <p class="meta"><span>头数</span><span id="archHeadValue"></span></p>
+          </div>
+          <div class="arch-control">
+            <label for="archEmbd">n_embd</label>
+            <input id="archEmbd" type="range" min="128" max="1536" step="64" value="768">
+            <p class="meta"><span>隐藏维度</span><span id="archEmbdValue"></span></p>
+          </div>
+          <div class="arch-control">
+            <label for="archBlock">block_size</label>
+            <input id="archBlock" type="range" min="64" max="2048" step="64" value="1024">
+            <p class="meta"><span>上下文长度</span><span id="archBlockValue"></span></p>
+          </div>
+          <div class="arch-control">
+            <label for="archVocab">vocab_size</label>
+            <input id="archVocab" type="range" min="5000" max="60000" step="500" value="50304">
+            <p class="meta"><span>词表大小</span><span id="archVocabValue"></span></p>
+          </div>
+        </div>
+        <div class="control-row">
+          <button id="archRandomBtn" class="secondary">随机一组配置</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>nanoGPT 架构总览大图</h3>
+        <canvas id="architectureBigCanvas" class="chart-canvas chart-xl"></canvas>
+        <p class="chart-legend">单图包含: 数据来源、token/position embedding、Block 堆叠、注意力头、lm_head、训练闭环、参数/计算量/显存估计。</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>这个页面只保留架构相关图，建议在浏览器横屏或桌面端查看更清晰。</p>
+  </footer>
+
+  <div id="termTooltip" class="term-tooltip" hidden></div>
+  <script src="./app.js"></script>
+</body>
+</html>

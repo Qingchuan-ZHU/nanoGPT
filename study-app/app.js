@@ -1,5 +1,12 @@
 (() => {
   const byId = (id) => document.getElementById(id);
+  const hasEl = (id) => Boolean(byId(id));
+  const on = (id, eventName, handler) => {
+    const el = byId(id);
+    if (!el) return false;
+    el.addEventListener(eventName, handler);
+    return true;
+  };
 
   const safeChar = (ch) => {
     if (ch === " ") return "␠";
@@ -746,11 +753,17 @@
   const normText = (s) => String(s || "").trim().toLowerCase();
   const escapeRegex = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const isAsciiWordLike = (s) => /^[A-Za-z0-9_./+-]+$/.test(s);
+  const buildTermExample = (term) => {
+    if (term.example) return term.example;
+    if (term.scene) return `例如: ${term.scene}`;
+    return `例如: 在学习流程中，用“${term.name}”描述对应步骤。`;
+  };
 
   glossaryTerms.forEach((t, idx) => {
+    t.example = buildTermExample(t);
     t._key = `term-${idx}`;
     t._searchBlob = normText(
-      `${t.name} ${t.alias} ${t.level} ${t.plain} ${t.detail} ${t.analogy} ${t.mistake} ${t.code} ${t.scene}`
+      `${t.name} ${t.alias} ${t.level} ${t.plain} ${t.detail} ${t.analogy} ${t.mistake} ${t.example} ${t.scene}`
     );
   });
 
@@ -827,24 +840,27 @@
 
   let glossaryHighlightTimer = null;
   const clearGlossaryHighlights = () => {
-    byId("termList")
-      .querySelectorAll("details.term-card.term-highlight")
-      .forEach((card) => card.classList.remove("term-highlight"));
+    const termList = byId("termList");
+    if (!termList) return;
+    termList.querySelectorAll("details.term-card.term-highlight").forEach((card) => card.classList.remove("term-highlight"));
   };
 
   const highlightGlossaryTerms = (termKeys) => {
     const keys = [...new Set((termKeys || []).filter(Boolean))];
     if (!keys.length) return;
+    const termList = byId("termList");
+    const termSearch = byId("termSearch");
+    if (!termList || !termSearch) return;
 
-    const missing = keys.some((k) => !byId("termList").querySelector(`details.term-card[data-term-key="${k}"]`));
+    const missing = keys.some((k) => !termList.querySelector(`details.term-card[data-term-key="${k}"]`));
     if (missing) {
-      byId("termSearch").value = "";
+      termSearch.value = "";
       renderGlossary();
     }
 
     clearGlossaryHighlights();
     keys.forEach((k) => {
-      const card = byId("termList").querySelector(`details.term-card[data-term-key="${k}"]`);
+      const card = termList.querySelector(`details.term-card[data-term-key="${k}"]`);
       if (card) {
         card.classList.add("term-highlight");
         card.open = true;
@@ -958,19 +974,24 @@
   };
 
   const renderGlossary = () => {
-    const q = normText(byId("termSearch").value);
+    const termSearch = byId("termSearch");
+    const termCount = byId("termCount");
+    const termList = byId("termList");
+    if (!termSearch || !termCount || !termList) return;
+
+    const q = normText(termSearch.value);
     const filtered = glossaryTerms.filter((t) => (q ? t._searchBlob.includes(q) : true));
 
-    byId("termCount").textContent = `${filtered.length}/${glossaryTerms.length}`;
+    termCount.textContent = `${filtered.length}/${glossaryTerms.length}`;
 
     if (!filtered.length) {
-      byId("termList").innerHTML = `<div class="card">没有匹配术语，请换一个关键词。</div>`;
+      termList.innerHTML = `<div class="card">没有匹配术语，请换一个关键词。</div>`;
       return;
     }
 
     const row = (label, value) => `<div class="term-row"><b>${label}:</b> ${escapeHtml(value)}</div>`;
 
-    byId("termList").innerHTML = filtered
+    termList.innerHTML = filtered
       .map(
         (t) => `
       <details class="term-card" data-term-key="${t._key}">
@@ -984,10 +1005,10 @@
         <div class="term-body">
           ${row("一句话", t.plain)}
           ${row("详细解释", t.detail)}
+          ${row("例子", t.example)}
           ${row("初中类比", t.analogy)}
           ${row("常见迷糊点", t.mistake)}
-          ${row("代码位置", t.code)}
-          ${row("本页面对应", t.scene)}
+          ${row("本页对应", t.scene)}
         </div>
       </details>
     `
@@ -995,25 +1016,25 @@
       .join("");
 
     if (!q) {
-      const firstCards = byId("termList").querySelectorAll("details.term-card");
+      const firstCards = termList.querySelectorAll("details.term-card");
       for (let i = 0; i < Math.min(3, firstCards.length); i += 1) firstCards[i].open = true;
     }
   };
 
-  byId("termSearch").addEventListener("input", renderGlossary);
-  byId("expandTermsBtn").addEventListener("click", () => {
-    byId("termList")
-      .querySelectorAll("details.term-card")
-      .forEach((item) => {
-        item.open = true;
-      });
+  on("termSearch", "input", renderGlossary);
+  on("expandTermsBtn", "click", () => {
+    const termList = byId("termList");
+    if (!termList) return;
+    termList.querySelectorAll("details.term-card").forEach((item) => {
+      item.open = true;
+    });
   });
-  byId("collapseTermsBtn").addEventListener("click", () => {
-    byId("termList")
-      .querySelectorAll("details.term-card")
-      .forEach((item) => {
-        item.open = false;
-      });
+  on("collapseTermsBtn", "click", () => {
+    const termList = byId("termList");
+    if (!termList) return;
+    termList.querySelectorAll("details.term-card").forEach((item) => {
+      item.open = false;
+    });
   });
 
   document.addEventListener("mouseover", (event) => {
@@ -1151,19 +1172,32 @@
   };
 
   const updateArchLabels = () => {
-    byId("archLayerValue").textContent = `${archState.nLayer}`;
-    byId("archHeadValue").textContent = `${archState.nHead}`;
-    byId("archEmbdValue").textContent = `${archState.nEmbd}`;
-    byId("archBlockValue").textContent = `${archState.blockSize}`;
-    byId("archVocabValue").textContent = `${archState.vocabSize}`;
+    const labels = [
+      ["archLayerValue", archState.nLayer],
+      ["archHeadValue", archState.nHead],
+      ["archEmbdValue", archState.nEmbd],
+      ["archBlockValue", archState.blockSize],
+      ["archVocabValue", archState.vocabSize],
+    ];
+    labels.forEach(([id, value]) => {
+      const el = byId(id);
+      if (el) el.textContent = `${value}`;
+    });
   };
 
   const syncArchStateFromInputs = () => {
-    archState.nLayer = Number(byId("archLayer").value);
-    archState.nHead = Number(byId("archHead").value);
-    archState.nEmbd = Number(byId("archEmbd").value);
-    archState.blockSize = Number(byId("archBlock").value);
-    archState.vocabSize = Number(byId("archVocab").value);
+    const archLayer = byId("archLayer");
+    const archHead = byId("archHead");
+    const archEmbd = byId("archEmbd");
+    const archBlock = byId("archBlock");
+    const archVocab = byId("archVocab");
+    if (!archLayer || !archHead || !archEmbd || !archBlock || !archVocab) return;
+
+    archState.nLayer = Number(archLayer.value);
+    archState.nHead = Number(archHead.value);
+    archState.nEmbd = Number(archEmbd.value);
+    archState.blockSize = Number(archBlock.value);
+    archState.vocabSize = Number(archVocab.value);
     updateArchLabels();
     drawArchitectureCharts();
   };
@@ -1675,7 +1709,208 @@
     );
   };
 
+  const drawArchitectureBigMap = () => {
+    withCanvas(
+      "architectureBigCanvas",
+      (ctx, w, h) => {
+        const d = calcArchDerived();
+        const hitZones = [];
+        ctx.fillStyle = "#fffdf6";
+        ctx.fillRect(0, 0, w, h);
+
+        const pad = 18;
+        const leftW = Math.max(250, Math.floor(w * 0.26));
+        const centerW = Math.max(300, Math.floor(w * 0.43));
+        const rightW = w - leftW - centerW - pad * 4;
+        const topY = 54;
+        const rowH = Math.max(72, Math.floor((h - topY - 170) / 4));
+        const gapY = 18;
+
+        const lx = pad;
+        const cx = lx + leftW + pad;
+        const rx = cx + centerW + pad;
+        const rowY = (i) => topY + i * (rowH + gapY);
+
+        const addBox = (x, y, ww, hh, title, sub, fill, terms) => {
+          drawBox(ctx, x, y, ww, hh, title, sub, fill, "#c7d3dc");
+          hitZones.push({ x, y, w: ww, h: hh, termKeys: terms });
+        };
+
+        addBox(
+          lx,
+          rowY(0),
+          leftW,
+          rowH,
+          "dataset",
+          "train.bin / val.bin",
+          "#f2f9ff",
+          chartTermGroups.archData
+        );
+        addBox(
+          lx,
+          rowY(1),
+          leftW,
+          rowH,
+          "get_batch",
+          `B=8, T=${d.T}`,
+          "#eefbff",
+          chartTermGroups.archData
+        );
+        addBox(
+          lx,
+          rowY(2),
+          leftW,
+          rowH,
+          "x,y shifted",
+          "x -> y next token",
+          "#eef7ff",
+          [...chartTermGroups.archData, ...chartTermGroups.charEncoding]
+        );
+        addBox(
+          lx,
+          rowY(3),
+          leftW,
+          rowH,
+          "train loop",
+          "forward/backward/step",
+          "#f7f5ff",
+          chartTermGroups.archTrainLoop
+        );
+
+        addBox(
+          cx,
+          rowY(0),
+          centerW,
+          rowH,
+          "Token + Position Embedding",
+          `wte(${d.V}x${d.C}) + wpe(${d.T}x${d.C})`,
+          "#fff6ea",
+          chartTermGroups.archModel
+        );
+        addBox(
+          cx,
+          rowY(1),
+          centerW,
+          rowH,
+          `Transformer Blocks x${d.L}`,
+          "LN -> Attn -> + -> LN -> MLP -> +",
+          "#fff2e9",
+          [...chartTermGroups.blockNorm, ...chartTermGroups.blockAttn, ...chartTermGroups.blockMLP]
+        );
+        addBox(
+          cx,
+          rowY(2),
+          centerW,
+          rowH,
+          "Self-Attention Heads",
+          `n_head=${d.H}, head_dim=${d.headDim}`,
+          "#eefbfb",
+          [...chartTermGroups.attentionCore, ...findGlossaryTermKeys("n_head", "n_embd")]
+        );
+        addBox(
+          cx,
+          rowY(3),
+          centerW,
+          rowH,
+          "ln_f + lm_head",
+          `logits: [B,T,V], V=${d.V}`,
+          "#f0f7ff",
+          chartTermGroups.archTensor
+        );
+
+        addBox(
+          rx,
+          rowY(0),
+          rightW,
+          rowH,
+          "Params",
+          `total≈${formatParam(d.total)}`,
+          "#fff7ee",
+          chartTermGroups.archParams
+        );
+        addBox(
+          rx,
+          rowY(1),
+          rightW,
+          rowH,
+          "Compute",
+          "FLOPs ~ O(T^2)",
+          "#fff3ef",
+          chartTermGroups.archFlops
+        );
+        addBox(
+          rx,
+          rowY(2),
+          rightW,
+          rowH,
+          "Memory",
+          "activation + grad",
+          "#eefbf5",
+          chartTermGroups.archMemory
+        );
+        addBox(
+          rx,
+          rowY(3),
+          rightW,
+          rowH,
+          "Sampling",
+          "temperature / top_k",
+          "#f7f5ff",
+          chartTermGroups.sampling
+        );
+
+        drawArrow(ctx, lx + leftW, rowY(0) + rowH / 2, cx, rowY(0) + rowH / 2, "#4f6a84");
+        drawArrow(ctx, lx + leftW, rowY(1) + rowH / 2, cx, rowY(1) + rowH / 2, "#4f6a84");
+        drawArrow(ctx, lx + leftW, rowY(2) + rowH / 2, cx, rowY(2) + rowH / 2, "#4f6a84");
+        drawArrow(ctx, cx + centerW, rowY(1) + rowH / 2, rx, rowY(1) + rowH / 2, "#4f6a84");
+        drawArrow(ctx, cx + centerW, rowY(3) + rowH / 2, rx, rowY(3) + rowH / 2, "#4f6a84");
+        drawArrow(ctx, lx + leftW / 2, rowY(2) + rowH, lx + leftW / 2, rowY(3), "#50708c");
+        drawArrow(ctx, cx + centerW / 2, rowY(1) + rowH, cx + centerW / 2, rowY(2), "#50708c");
+
+        ctx.fillStyle = "#3f5d76";
+        ctx.font = "13px LXGW WenKai, Source Han Sans SC, sans-serif";
+        ctx.fillText("nanoGPT 架构图谱总览 (单图)", pad, 26);
+        ctx.font = "12px Cascadia Mono, Consolas, monospace";
+        ctx.fillText(
+          `n_layer=${d.L}  n_head=${d.H}  n_embd=${d.C}  block_size=${d.T}  vocab_size=${d.V}`,
+          pad,
+          44
+        );
+        if (archState.warning) {
+          ctx.fillStyle = "#b44a39";
+          ctx.fillText(archState.warning, pad, h - 124);
+        }
+
+        const summaryY = h - 102;
+        const summaryH = 82;
+        drawBox(
+          ctx,
+          pad,
+          summaryY,
+          w - pad * 2,
+          summaryH,
+          "Summary",
+          `params≈${formatParam(d.total)} | attn=${formatParam(d.attnTotal)} | mlp=${formatParam(d.mlpTotal)}`,
+          "#fffaf0",
+          "#d4d1c6"
+        );
+        hitZones.push({
+          x: pad,
+          y: summaryY,
+          w: w - pad * 2,
+          h: summaryH,
+          termKeys: [...chartTermGroups.archParams, ...chartTermGroups.archFlops, ...chartTermGroups.archMemory],
+        });
+
+        setCanvasHitZones("architectureBigCanvas", hitZones);
+      },
+      1080,
+      920
+    );
+  };
+
   const drawArchitectureCharts = () => {
+    drawArchitectureBigMap();
     drawArchitectureFlowChart();
     drawDataPipelineChart();
     drawTensorShapeChart();
@@ -1684,23 +1919,31 @@
     drawFlopsChart();
     drawTrainTimelineChart();
     drawMemoryChart();
-    annotateTechTerms(byId("arch"));
+    const archRoot = byId("arch");
+    if (archRoot) annotateTechTerms(archRoot);
   };
 
   const randomChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const randomizeArchConfig = () => {
-    byId("archLayer").value = String(randomChoice([6, 8, 10, 12, 16, 20]));
-    byId("archHead").value = String(randomChoice([4, 6, 8, 12, 16]));
-    byId("archEmbd").value = String(randomChoice([384, 512, 640, 768, 1024, 1280]));
-    byId("archBlock").value = String(randomChoice([256, 512, 768, 1024, 1536, 2048]));
-    byId("archVocab").value = String(randomChoice([20000, 30000, 40000, 50304, 56000]));
+    const archLayer = byId("archLayer");
+    const archHead = byId("archHead");
+    const archEmbd = byId("archEmbd");
+    const archBlock = byId("archBlock");
+    const archVocab = byId("archVocab");
+    if (!archLayer || !archHead || !archEmbd || !archBlock || !archVocab) return;
+
+    archLayer.value = String(randomChoice([6, 8, 10, 12, 16, 20]));
+    archHead.value = String(randomChoice([4, 6, 8, 12, 16]));
+    archEmbd.value = String(randomChoice([384, 512, 640, 768, 1024, 1280]));
+    archBlock.value = String(randomChoice([256, 512, 768, 1024, 1536, 2048]));
+    archVocab.value = String(randomChoice([20000, 30000, 40000, 50304, 56000]));
     syncArchStateFromInputs();
   };
 
   ["archLayer", "archHead", "archEmbd", "archBlock", "archVocab"].forEach((id) => {
-    byId(id).addEventListener("input", syncArchStateFromInputs);
+    on(id, "input", syncArchStateFromInputs);
   });
-  byId("archRandomBtn").addEventListener("click", randomizeArchConfig);
+  on("archRandomBtn", "click", randomizeArchConfig);
 
   /* ---------------------- 实验 1: 编码 + 频率图 ---------------------- */
   const drawCharFreqChart = () => {
@@ -1760,12 +2003,19 @@
   };
 
   const buildCharDemo = () => {
-    const text = byId("charInput").value;
+    const charInput = byId("charInput");
+    const charHint = byId("charHint");
+    const vocabView = byId("vocabView");
+    const encodedView = byId("encodedView");
+    const pairView = byId("pairView");
+    if (!charInput || !charHint || !vocabView || !encodedView || !pairView) return;
+
+    const text = charInput.value;
     if (!text) {
-      byId("charHint").textContent = "请输入至少 1 个字符。";
-      byId("vocabView").innerHTML = "";
-      byId("encodedView").innerHTML = "";
-      byId("pairView").innerHTML = "";
+      charHint.textContent = "请输入至少 1 个字符。";
+      vocabView.innerHTML = "";
+      encodedView.innerHTML = "";
+      pairView.innerHTML = "";
       charState.freqEntries = [];
       drawCharFreqChart();
       return;
@@ -1787,11 +2037,11 @@
     const encoded = chars.map((ch) => stoi[ch]);
     charState.freqEntries = itos.map((ch) => ({ ch, count: freq[ch] }));
 
-    byId("vocabView").innerHTML = itos
+    vocabView.innerHTML = itos
       .map((ch, i) => `<span class="chip"><b>${safeChar(ch)}</b> -> ${i}</span>`)
       .join("");
 
-    byId("encodedView").innerHTML = encoded
+    encodedView.innerHTML = encoded
       .map((id, i) => `<span class="token">${i}:${id}</span>`)
       .join("");
 
@@ -1801,24 +2051,29 @@
       const right = `${safeChar(chars[i + 1])}(${encoded[i + 1]})`;
       pairRows.push(`<div class="pair-row">x[${i}] = ${left}  ->  y[${i}] = ${right}</div>`);
     }
-    byId("pairView").innerHTML = pairRows.join("");
-    byId("charHint").textContent =
+    pairView.innerHTML = pairRows.join("");
+    charHint.textContent =
       `共 ${chars.length} 个字符，去重后词表大小 ${itos.length}。右移配对对应 train.py:116。`;
-    annotateTechTerms(byId("exp1"));
+    const exp1Root = byId("exp1");
+    if (exp1Root) annotateTechTerms(exp1Root);
     drawCharFreqChart();
   };
 
-  byId("buildCharBtn").addEventListener("click", buildCharDemo);
-  byId("randomTextBtn").addEventListener("click", () => {
+  on("buildCharBtn", "click", buildCharDemo);
+  on("randomTextBtn", "click", () => {
+    const charInput = byId("charInput");
+    if (!charInput) return;
     currentExample = (currentExample + 1) % textExamples.length;
-    byId("charInput").value = textExamples[currentExample];
+    charInput.value = textExamples[currentExample];
     buildCharDemo();
   });
-  byId("charInput").addEventListener("input", buildCharDemo);
+  on("charInput", "input", buildCharDemo);
 
   /* ---------------------- 实验 2: 注意力 + 热力图 ---------------------- */
   const renderTokenStrip = (focus) => {
-    byId("tokenStrip").innerHTML = attnState.tokens
+    const tokenStrip = byId("tokenStrip");
+    if (!tokenStrip) return;
+    tokenStrip.innerHTML = attnState.tokens
       .map((tok, i) => {
         const cls = i === focus ? "token-pill focus" : i > focus ? "token-pill masked" : "token-pill";
         return `<span class="${cls}">${i}:${escapeHtml(tok)}</span>`;
@@ -1827,8 +2082,10 @@
   };
 
   const renderScoreControls = () => {
-    const focus = Number(byId("focusIndex").value);
+    const focusIndex = byId("focusIndex");
     const root = byId("scoreControls");
+    if (!focusIndex || !root) return;
+    const focus = Number(focusIndex.value);
     root.innerHTML = "";
 
     attnState.tokens.forEach((tok, i) => {
@@ -1955,8 +2212,14 @@
   };
 
   const updateAttention = () => {
-    const focus = Number(byId("focusIndex").value);
-    byId("focusLabel").textContent = String(focus);
+    const focusIndex = byId("focusIndex");
+    const focusLabel = byId("focusLabel");
+    const attnBars = byId("attnBars");
+    const attnExplain = byId("attnExplain");
+    if (!focusIndex || !focusLabel || !attnBars || !attnExplain) return;
+
+    const focus = Number(focusIndex.value);
+    focusLabel.textContent = String(focus);
     renderTokenStrip(focus);
     renderScoreControls();
 
@@ -1968,7 +2231,7 @@
     const tokenValues = attnState.tokens.map((tok, i) => tok.length + i * 0.2 + 1);
     const context = sum(probs.map((p, i) => p * tokenValues[i]));
 
-    byId("attnBars").innerHTML = attnState.tokens
+    attnBars.innerHTML = attnState.tokens
       .map((tok, i) => {
         const pct = probs[i] * 100;
         const cls = i > focus ? "bar-fill masked" : "bar-fill";
@@ -1982,28 +2245,32 @@
       })
       .join("");
 
-    byId("attnExplain").textContent =
+    attnExplain.textContent =
       `第 ${focus} 个 token 只能看左边(含自己)。未来词被屏蔽后概率为 0。简化 context=${fmtNum(context)}。`;
 
-    annotateTechTerms(byId("exp2"));
+    const exp2Root = byId("exp2");
+    if (exp2Root) annotateTechTerms(exp2Root);
     drawAttentionHeatmap(focus);
   };
 
   const applyAttentionInput = () => {
-    const raw = byId("attnInput").value.trim();
+    const attnInput = byId("attnInput");
+    const focusSlider = byId("focusIndex");
+    if (!attnInput || !focusSlider) return;
+
+    const raw = attnInput.value.trim();
     const tokens = raw.length ? raw.split(/\s+/) : [];
     attnState.tokens = tokens.length ? tokens : ["I", "am", "learning", "nanoGPT", "today"];
     attnState.scores = attnState.tokens.map((_, i) => Number((1.8 - i * 0.25).toFixed(1)));
 
-    const focusSlider = byId("focusIndex");
     focusSlider.max = String(Math.max(attnState.tokens.length - 1, 0));
     focusSlider.value = String(Math.max(attnState.tokens.length - 1, 0));
     updateAttention();
   };
 
-  byId("focusIndex").addEventListener("input", updateAttention);
-  byId("attnApplyBtn").addEventListener("click", applyAttentionInput);
-  byId("attnInput").addEventListener("change", applyAttentionInput);
+  on("focusIndex", "input", updateAttention);
+  on("attnApplyBtn", "click", applyAttentionInput);
+  on("attnInput", "change", applyAttentionInput);
 
   /* ---------------------- 实验 3: Block + 图表 ---------------------- */
   const randomVec = () => Array.from({ length: 4 }, () => Number((Math.random() * 2 - 1).toFixed(2)));
@@ -2135,6 +2402,10 @@
   };
 
   const renderPipeline = () => {
+    const pipeline = byId("pipeline");
+    const blockExplain = byId("blockExplain");
+    if (!pipeline || !blockExplain) return;
+
     const html = stageDefs
       .map((s, i) => {
         const isActive = i === blockState.step;
@@ -2147,9 +2418,10 @@
         `;
       })
       .join("");
-    byId("pipeline").innerHTML = html;
-    byId("blockExplain").textContent = stageExplain[blockState.step];
-    annotateTechTerms(byId("exp3"));
+    pipeline.innerHTML = html;
+    blockExplain.textContent = stageExplain[blockState.step];
+    const exp3Root = byId("exp3");
+    if (exp3Root) annotateTechTerms(exp3Root);
     drawBlockEnergyChart();
     drawBlockVectorChart();
   };
@@ -2165,24 +2437,27 @@
     renderPipeline();
   };
 
-  byId("nextStepBtn").addEventListener("click", nextBlockStep);
-  byId("resetBlockBtn").addEventListener("click", () => {
+  on("nextStepBtn", "click", nextBlockStep);
+  on("resetBlockBtn", "click", () => {
+    const autoPlayBtn = byId("autoPlayBtn");
     if (blockState.autoTimer) {
       clearInterval(blockState.autoTimer);
       blockState.autoTimer = null;
-      byId("autoPlayBtn").textContent = "自动播放";
+      if (autoPlayBtn) autoPlayBtn.textContent = "自动播放";
     }
     resetBlock();
   });
 
-  byId("autoPlayBtn").addEventListener("click", () => {
+  on("autoPlayBtn", "click", () => {
+    const autoPlayBtn = byId("autoPlayBtn");
+    if (!autoPlayBtn) return;
     if (blockState.autoTimer) {
       clearInterval(blockState.autoTimer);
       blockState.autoTimer = null;
-      byId("autoPlayBtn").textContent = "自动播放";
+      autoPlayBtn.textContent = "自动播放";
       return;
     }
-    byId("autoPlayBtn").textContent = "停止";
+    autoPlayBtn.textContent = "停止";
     blockState.autoTimer = setInterval(nextBlockStep, 780);
   });
 
@@ -2190,10 +2465,30 @@
   const scaleToLr = (x) => 10 ** (-5 + (Number(x) / 100) * 3);
 
   const updateTrainLabels = () => {
-    byId("lrValue").textContent = scaleToLr(byId("lrScale").value).toExponential(2);
-    byId("batchValue").textContent = byId("batchSize").value;
-    byId("accumValue").textContent = byId("gradAccum").value;
-    byId("dropoutValue").textContent = (Number(byId("dropoutRate").value) / 100).toFixed(2);
+    const lrScale = byId("lrScale");
+    const batchSize = byId("batchSize");
+    const gradAccum = byId("gradAccum");
+    const dropoutRate = byId("dropoutRate");
+    const lrValue = byId("lrValue");
+    const batchValue = byId("batchValue");
+    const accumValue = byId("accumValue");
+    const dropoutValue = byId("dropoutValue");
+    if (
+      !lrScale ||
+      !batchSize ||
+      !gradAccum ||
+      !dropoutRate ||
+      !lrValue ||
+      !batchValue ||
+      !accumValue ||
+      !dropoutValue
+    ) {
+      return;
+    }
+    lrValue.textContent = scaleToLr(lrScale.value).toExponential(2);
+    batchValue.textContent = batchSize.value;
+    accumValue.textContent = gradAccum.value;
+    dropoutValue.textContent = (Number(dropoutRate.value) / 100).toFixed(2);
   };
 
   const getScheduledLr = (i, steps, baseLr, warmupEnd) => {
@@ -2346,10 +2641,17 @@
   };
 
   const simulateTrain = () => {
-    const baseLr = scaleToLr(byId("lrScale").value);
-    const batch = Number(byId("batchSize").value);
-    const accum = Number(byId("gradAccum").value);
-    const dropout = Number(byId("dropoutRate").value) / 100;
+    const lrScale = byId("lrScale");
+    const batchSize = byId("batchSize");
+    const gradAccum = byId("gradAccum");
+    const dropoutRate = byId("dropoutRate");
+    const trainSummary = byId("trainSummary");
+    if (!lrScale || !batchSize || !gradAccum || !dropoutRate || !trainSummary) return;
+
+    const baseLr = scaleToLr(lrScale.value);
+    const batch = Number(batchSize.value);
+    const accum = Number(gradAccum.value);
+    const dropout = Number(dropoutRate.value) / 100;
 
     const steps = 220;
     const warmupEnd = Math.max(10, Math.round(steps * 0.12));
@@ -2390,21 +2692,23 @@
     let note = "学习率接近常用区间，下降趋势较稳。";
     if (baseLr > 3e-3) note = "学习率偏大，曲线波动明显。";
     if (baseLr < 8e-5) note = "学习率偏小，下降速度偏慢。";
-    byId("trainSummary").textContent =
+    trainSummary.textContent =
       `最终 train=${fmtNum(lastTrain)}, val=${fmtNum(lastVal)}。${note} 对照 train.py:231 与 train.py:255。`;
-    annotateTechTerms(byId("exp4"));
+    const exp4Root = byId("exp4");
+    if (exp4Root) annotateTechTerms(exp4Root);
   };
 
-  byId("lrScale").addEventListener("input", updateTrainLabels);
-  byId("batchSize").addEventListener("input", updateTrainLabels);
-  byId("gradAccum").addEventListener("input", updateTrainLabels);
-  byId("dropoutRate").addEventListener("input", updateTrainLabels);
-  byId("runTrainSimBtn").addEventListener("click", simulateTrain);
-  byId("resetTrainSimBtn").addEventListener("click", () => {
+  on("lrScale", "input", updateTrainLabels);
+  on("batchSize", "input", updateTrainLabels);
+  on("gradAccum", "input", updateTrainLabels);
+  on("dropoutRate", "input", updateTrainLabels);
+  on("runTrainSimBtn", "click", simulateTrain);
+  on("resetTrainSimBtn", "click", () => {
     trainState.train = [];
     trainState.val = [];
     trainState.lrs = [];
-    byId("trainSummary").textContent = "";
+    const trainSummary = byId("trainSummary");
+    if (trainSummary) trainSummary.textContent = "";
     drawLossChart();
     drawLrChart();
   });
@@ -2506,29 +2810,44 @@
   };
 
   const updateSampleLabels = () => {
-    byId("temperatureValue").textContent = (Number(byId("temperatureRange").value) / 10).toFixed(1);
-    byId("topKValue").textContent = byId("topKRange").value;
+    const temperatureRange = byId("temperatureRange");
+    const topKRange = byId("topKRange");
+    const temperatureValue = byId("temperatureValue");
+    const topKValue = byId("topKValue");
+    if (!temperatureRange || !topKRange || !temperatureValue || !topKValue) return;
+    temperatureValue.textContent = (Number(temperatureRange.value) / 10).toFixed(1);
+    topKValue.textContent = topKRange.value;
   };
 
   const syncSeed = () => {
-    const seed = byId("seedInput").value.trim().toLowerCase();
+    const seedInput = byId("seedInput");
+    const genOutput = byId("genOutput");
+    if (!seedInput || !genOutput) return;
+    const seed = seedInput.value.trim().toLowerCase();
     sampleState.seq = seed ? seed.split(/\s+/) : ["nano"];
-    byId("genOutput").textContent = sampleState.seq.join(" ");
+    genOutput.textContent = sampleState.seq.join(" ");
   };
 
   const renderCandidates = (dist) => {
+    const candidateView = byId("candidateView");
+    if (!candidateView) return;
     sampleState.dist = dist;
-    byId("candidateView").innerHTML = dist
+    candidateView.innerHTML = dist
       .map((x) => `<div class="candidate-row"><span>${escapeHtml(x.word)}</span><span>${(x.p * 100).toFixed(1)}%</span></div>`)
       .join("");
-    annotateTechTerms(byId("exp4"));
+    const exp4Root = byId("exp4");
+    if (exp4Root) annotateTechTerms(exp4Root);
     drawCandidateChart();
   };
 
   const generateOne = () => {
+    const temperatureRange = byId("temperatureRange");
+    const topKRange = byId("topKRange");
+    const genOutput = byId("genOutput");
+    if (!temperatureRange || !topKRange || !genOutput) return;
     if (!sampleState.seq.length) syncSeed();
-    const temperature = Number(byId("temperatureRange").value) / 10;
-    const topK = Number(byId("topKRange").value);
+    const temperature = Number(temperatureRange.value) / 10;
+    const topK = Number(topKRange.value);
     const last = sampleState.seq[sampleState.seq.length - 1];
     const dist = candidateDist(last, temperature, topK);
     renderCandidates(dist);
@@ -2536,24 +2855,26 @@
     let next = sampleWord(dist);
     if (next === EOS) next = ".";
     sampleState.seq.push(next);
-    byId("genOutput").textContent = sampleState.seq.join(" ");
+    genOutput.textContent = sampleState.seq.join(" ");
   };
 
-  byId("genOneBtn").addEventListener("click", generateOne);
-  byId("genTenBtn").addEventListener("click", () => {
+  on("genOneBtn", "click", generateOne);
+  on("genTenBtn", "click", () => {
     for (let i = 0; i < 10; i += 1) generateOne();
   });
-  byId("genResetBtn").addEventListener("click", () => {
+  on("genResetBtn", "click", () => {
+    const candidateView = byId("candidateView");
     syncSeed();
     sampleState.dist = [];
-    byId("candidateView").innerHTML = "";
+    if (candidateView) candidateView.innerHTML = "";
     drawCandidateChart();
   });
-  byId("seedInput").addEventListener("change", syncSeed);
-  byId("temperatureRange").addEventListener("input", updateSampleLabels);
-  byId("topKRange").addEventListener("input", updateSampleLabels);
+  on("seedInput", "change", syncSeed);
+  on("temperatureRange", "input", updateSampleLabels);
+  on("topKRange", "input", updateSampleLabels);
 
   const chartCanvasIds = [
+    "architectureBigCanvas",
     "gptArchitectureCanvas",
     "dataPipelineCanvas",
     "tensorShapeCanvas",
@@ -2605,7 +2926,8 @@
   const redrawAllCharts = () => {
     drawArchitectureCharts();
     drawCharFreqChart();
-    drawAttentionHeatmap(Number(byId("focusIndex").value || 0));
+    const focusIndex = byId("focusIndex");
+    drawAttentionHeatmap(Number((focusIndex && focusIndex.value) || 0));
     drawBlockEnergyChart();
     drawBlockVectorChart();
     drawLossChart();
@@ -2614,19 +2936,19 @@
   };
 
   /* ---------------------- 初始化 ---------------------- */
-  renderGlossary();
-  syncArchStateFromInputs();
+  if (hasEl("termList") && hasEl("termSearch") && hasEl("termCount")) renderGlossary();
+  if (hasEl("archLayer")) syncArchStateFromInputs();
   bindChartTermInteractions();
   annotateTechTerms(document.body);
-  buildCharDemo();
-  applyAttentionInput();
-  resetBlock();
-  updateTrainLabels();
-  drawLossChart();
-  drawLrChart();
-  updateSampleLabels();
-  syncSeed();
-  drawCandidateChart();
+  if (hasEl("charInput")) buildCharDemo();
+  if (hasEl("attnInput") && hasEl("focusIndex")) applyAttentionInput();
+  if (hasEl("pipeline")) resetBlock();
+  if (hasEl("lrScale")) updateTrainLabels();
+  if (hasEl("lossCanvas")) drawLossChart();
+  if (hasEl("lrCanvas")) drawLrChart();
+  if (hasEl("temperatureRange")) updateSampleLabels();
+  if (hasEl("seedInput")) syncSeed();
+  if (hasEl("candidateCanvas")) drawCandidateChart();
 
   window.addEventListener("resize", redrawAllCharts);
 })();

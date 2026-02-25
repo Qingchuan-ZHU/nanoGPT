@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>实验 3 Block | nanoGPT 学习实验室</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="shape shape-a"></div>
+  <div class="shape shape-b"></div>
+
+  <header class="hero">
+    <p class="eyebrow">nanoGPT 学习实验室</p>
+    <h1>实验 3: 一个 Transformer Block 发生了什么</h1>
+    <p class="hero-subtitle">逐步播放 LayerNorm、Attention、MLP 和两次残差，理解 Block 内部数据流。</p>
+    <nav class="quick-nav">
+      <a href="./index.html">首页</a>
+      <a href="./glossary.html">术语与源码</a>
+      <a href="./architecture.html">架构图谱</a>
+      <a href="./exp1.html">实验 1 编码</a>
+      <a href="./exp2.html">实验 2 注意力</a>
+      <a href="./exp3.html" class="active">实验 3 Block</a>
+      <a href="./exp4.html">实验 4 训练与采样</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section id="exp3" class="panel">
+      <h2>实验 3: 一个 Transformer Block 发生了什么</h2>
+      <p class="knowledge">知识点: 平均数、标准差、分步函数、向量加法</p>
+      <div class="card">
+        <div class="control-row">
+          <button id="nextStepBtn">下一步</button>
+          <button id="autoPlayBtn" class="secondary">自动播放</button>
+          <button id="resetBlockBtn" class="secondary">重置向量</button>
+        </div>
+      </div>
+      <div id="pipeline" class="pipeline"></div>
+      <p id="blockExplain" class="hint"></p>
+      <div class="layout-two">
+        <div class="card">
+          <h3>各阶段向量能量 (L2 范数)</h3>
+          <canvas id="blockEnergyCanvas" class="chart-canvas chart-sm"></canvas>
+        </div>
+        <div class="card">
+          <h3>当前阶段向量分量</h3>
+          <canvas id="blockVectorCanvas" class="chart-canvas chart-sm"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>把当前页和“架构图谱”结合看，可以把单个 Block 放回整模型语境。</p>
+  </footer>
+
+  <div id="termTooltip" class="term-tooltip" hidden></div>
+  <script src="./app.js"></script>
+</body>
+</html>

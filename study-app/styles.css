@@ -114,6 +114,13 @@ h1 {
   box-shadow: 0 6px 16px rgba(128, 78, 31, 0.16);
 }
 
+.quick-nav a.active {
+  color: #fff;
+  border-color: #2e7f7f;
+  background: linear-gradient(130deg, #2d9c9c, #267979);
+  box-shadow: 0 8px 18px rgba(38, 112, 112, 0.26);
+}
+
 .container {
   max-width: 1120px;
   margin: 0 auto 42px;
@@ -166,6 +173,39 @@ h3 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+.path-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.path-card {
+  display: block;
+  color: #1f2c3a;
+  text-decoration: none;
+  border: 1px solid #e0ddd3;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fffef9, #fff6e8);
+  padding: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.path-card h3 {
+  margin: 2px 0 8px;
+}
+
+.path-card p {
+  margin: 0;
+  color: #4d6077;
+  line-height: 1.5;
+}
+
+.path-card:hover {
+  transform: translateY(-2px);
+  border-color: #e2b077;
+  box-shadow: 0 12px 20px rgba(97, 73, 39, 0.14);
 }
 
 .arch-controls {
@@ -555,6 +595,10 @@ button.secondary {
   height: 220px;
 }
 
+.chart-xl {
+  height: 920px;
+}
+
 .output {
   min-height: 80px;
   border: 1px solid #dad8cf;
@@ -641,6 +685,10 @@ th {
     grid-template-columns: 1fr;
   }
 
+  .path-grid {
+    grid-template-columns: 1fr;
+  }
+
   .arch-controls {
     grid-template-columns: 1fr 1fr;
   }
@@ -686,5 +734,9 @@ th {
 
   .chart-sm {
     height: 200px;
+  }
+
+  .chart-xl {
+    height: 680px;
   }
 }
